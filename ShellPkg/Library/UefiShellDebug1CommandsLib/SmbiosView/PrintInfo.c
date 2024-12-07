@@ -1295,9 +1295,34 @@ SmbiosPrintStructure (
       DisplayMCHostInterfaceType (Struct->Type42->InterfaceType, Option);
       if (AE_SMBIOS_VERSION (0x3, 0x2)) {
         PRINT_STRUCT_VALUE_H (Struct, Type42, InterfaceTypeSpecificDataLength);
-        PRINT_BIT_FIELD (Struct, Type42, InterfaceTypeSpecificData, Struct->Type42->InterfaceTypeSpecificDataLength);
-      }
 
+        ShellPrintEx (-1, -1, L"InterfaceTypeSpecificData\n");
+        //Decode and interpret InterfaceTypeSpecificData based on the InterfaceType
+        switch (Struct->Type42->InterfaceType) {
+          case MCHostInterfaceProtocolTypeOemDefined:
+            // The first four bytes are the vendor ID (MSB first), as assigned by the Internet Assigned Numbers Authority (IANA) as "Enterprise Number".
+            // See https://www.iana.org/assignments/enterprise-numbers.txt
+            ShellPrintEx (-1, -1, L"Vendor ID (IANA Enterprise Number): %d", (UINT32) *(Struct->Type42->InterfaceTypeSpecificData));
+            break;
+
+          case MCHostInterfaceProtocolTypeMCTP:
+            // For MCTP interface type of MMBI; this defines the pointer to the MMBI capability descriptor, as defined in DSP0282
+            // For MCTP interface type of I2C, I3C, KCS; this value is reserved and must be 0
+            UINT32 dataValue = *(UINT32*)Struct->Type42->InterfaceTypeSpecificData;
+            ShellPrintEx (-1, -1, L" 0x%x\n", dataValue);
+            break;
+
+          //The decoding is not defined for these values as in SMBIOS 3.8.0. The value is dumped
+          //switch fall through
+          case MCHostInterfaceProtocolTypeIPMI:
+
+          case MCHostInterfaceProtocolTypeRedfishOverIP:
+
+          default:
+            PRINT_BIT_FIELD (Struct, Type42, InterfaceTypeSpecificData, Struct->Type42->InterfaceTypeSpecificDataLength);
+          break;
+        }
+      }
       break;
 
     //
