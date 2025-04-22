@@ -10,7 +10,7 @@
 #
 
 import git
-import GitHub
+import Github
 import os
 import sys
 
